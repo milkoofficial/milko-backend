@@ -1,8 +1,12 @@
 const productService = require('../services/productService');
+const productImageModel = require('../models/productImage');
+const productVariationModel = require('../models/productVariation');
+const productReviewModel = require('../models/productReview');
 const bannerService = require('../services/bannerService');
 const userModel = require('../models/user');
 const subscriptionModel = require('../models/subscription');
 const subscriptionService = require('../services/subscriptionService');
+const { uploadImage, deleteImage } = require('../config/cloudinary');
 const { query } = require('../config/database');
 
 /**
@@ -67,6 +71,24 @@ const updateProduct = async (req, res, next) => {
 };
 
 /**
+ * Get product by ID with details
+ * GET /api/admin/products/:id
+ */
+const getProductById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const product = await productService.getProductById(id, true);
+
+    res.json({
+      success: true,
+      data: product,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Delete product
  * DELETE /api/admin/products/:id
  */
@@ -78,6 +100,216 @@ const deleteProduct = async (req, res, next) => {
     res.json({
       success: true,
       message: 'Product deleted successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ========== Product Images ==========
+
+/**
+ * Add product image
+ * POST /api/admin/products/:id/images
+ */
+const addProductImage = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { displayOrder = 0 } = req.body;
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'Image file is required',
+      });
+    }
+
+    const uploadResult = await uploadImage(req.file.buffer, {
+      resource_type: 'image',
+      folder: 'milko/products',
+    });
+
+    const image = await productImageModel.createProductImage(id, uploadResult.url, displayOrder);
+
+    res.status(201).json({
+      success: true,
+      data: image,
+      message: 'Image added successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Delete product image
+ * DELETE /api/admin/products/:id/images/:imageId
+ */
+const deleteProductImage = async (req, res, next) => {
+  try {
+    const { imageId } = req.params;
+    const image = await productImageModel.deleteProductImage(imageId);
+
+    if (image) {
+      // Delete from Cloudinary
+      try {
+        const urlParts = image.imageUrl.split('/');
+        const publicId = urlParts.slice(-2).join('/').split('.')[0];
+        await deleteImage(`milko/products/${publicId}`);
+      } catch (error) {
+        console.error('Error deleting image from Cloudinary:', error);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Image deleted successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ========== Product Variations ==========
+
+/**
+ * Add product variation
+ * POST /api/admin/products/:id/variations
+ */
+const addProductVariation = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { size, priceMultiplier = 1.0, isAvailable = true, displayOrder = 0 } = req.body;
+
+    if (!size) {
+      return res.status(400).json({
+        success: false,
+        error: 'Size is required',
+      });
+    }
+
+    const variation = await productVariationModel.createProductVariation(
+      id,
+      size,
+      priceMultiplier,
+      isAvailable,
+      displayOrder
+    );
+
+    res.status(201).json({
+      success: true,
+      data: variation,
+      message: 'Variation added successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update product variation
+ * PUT /api/admin/products/:id/variations/:variationId
+ */
+const updateProductVariation = async (req, res, next) => {
+  try {
+    const { variationId } = req.params;
+    const variation = await productVariationModel.updateProductVariation(variationId, req.body);
+
+    res.json({
+      success: true,
+      data: variation,
+      message: 'Variation updated successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Delete product variation
+ * DELETE /api/admin/products/:id/variations/:variationId
+ */
+const deleteProductVariation = async (req, res, next) => {
+  try {
+    const { variationId } = req.params;
+    await productVariationModel.deleteProductVariation(variationId);
+
+    res.json({
+      success: true,
+      message: 'Variation deleted successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ========== Product Reviews ==========
+
+/**
+ * Add product review (admin can add reviews)
+ * POST /api/admin/products/:id/reviews
+ */
+const addProductReview = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { reviewerName, rating, comment, isApproved = true } = req.body;
+
+    if (!reviewerName || !rating) {
+      return res.status(400).json({
+        success: false,
+        error: 'Reviewer name and rating are required',
+      });
+    }
+
+    const review = await productReviewModel.createProductReview(id, {
+      userId: null,
+      reviewerName,
+      rating,
+      comment,
+      isApproved,
+    });
+
+    res.status(201).json({
+      success: true,
+      data: review,
+      message: 'Review added successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update product review
+ * PUT /api/admin/products/:id/reviews/:reviewId
+ */
+const updateProductReview = async (req, res, next) => {
+  try {
+    const { reviewId } = req.params;
+    const review = await productReviewModel.updateProductReview(reviewId, req.body);
+
+    res.json({
+      success: true,
+      data: review,
+      message: 'Review updated successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Delete product review
+ * DELETE /api/admin/products/:id/reviews/:reviewId
+ */
+const deleteProductReview = async (req, res, next) => {
+  try {
+    const { reviewId } = req.params;
+    await productReviewModel.deleteProductReview(reviewId);
+
+    res.json({
+      success: true,
+      message: 'Review deleted successfully',
     });
   } catch (error) {
     next(error);
@@ -335,9 +567,21 @@ const deleteBanner = async (req, res, next) => {
 module.exports = {
   // Products
   getAllProducts,
+  getProductById,
   createProduct,
   updateProduct,
   deleteProduct,
+  // Product Images
+  addProductImage,
+  deleteProductImage,
+  // Product Variations
+  addProductVariation,
+  updateProductVariation,
+  deleteProductVariation,
+  // Product Reviews
+  addProductReview,
+  updateProductReview,
+  deleteProductReview,
   // Users
   getAllUsers,
   getUserById,

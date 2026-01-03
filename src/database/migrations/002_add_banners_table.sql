@@ -27,3 +27,5 @@ CREATE TRIGGER update_banners_updated_at BEFORE UPDATE ON banners
 COMMENT ON TABLE banners IS 'Stores banner images for homepage carousel';
 COMMENT ON COLUMN banners.order_index IS 'Order in which banners appear (lower numbers first)';
 
+
+

@@ -32,9 +32,24 @@ const upload = multer({
 
 // Products
 router.get('/products', adminController.getAllProducts);
+router.get('/products/:id', adminController.getProductById);
 router.post('/products', upload.single('image'), adminController.createProduct);
 router.put('/products/:id', upload.single('image'), adminController.updateProduct);
 router.delete('/products/:id', adminController.deleteProduct);
+
+// Product Images
+router.post('/products/:id/images', upload.single('image'), adminController.addProductImage);
+router.delete('/products/:id/images/:imageId', adminController.deleteProductImage);
+
+// Product Variations
+router.post('/products/:id/variations', adminController.addProductVariation);
+router.put('/products/:id/variations/:variationId', adminController.updateProductVariation);
+router.delete('/products/:id/variations/:variationId', adminController.deleteProductVariation);
+
+// Product Reviews
+router.post('/products/:id/reviews', adminController.addProductReview);
+router.put('/products/:id/reviews/:reviewId', adminController.updateProductReview);
+router.delete('/products/:id/reviews/:reviewId', adminController.deleteProductReview);
 
 // Users
 router.get('/users', adminController.getAllUsers);

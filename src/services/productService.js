@@ -1,4 +1,7 @@
 const productModel = require('../models/product');
+const productImageModel = require('../models/productImage');
+const productVariationModel = require('../models/productVariation');
+const productReviewModel = require('../models/productReview');
 const { uploadImage, deleteImage } = require('../config/cloudinary');
 const { ValidationError, NotFoundError } = require('../utils/errors');
 
@@ -24,15 +27,32 @@ const getAllProducts = async () => {
 };
 
 /**
- * Get product by ID
+ * Get product by ID (with details)
  * @param {string} productId - Product ID
+ * @param {boolean} includeDetails - Whether to include images, variations, and reviews
  * @returns {Promise<Object>} Product object
  */
-const getProductById = async (productId) => {
+const getProductById = async (productId, includeDetails = false) => {
   const product = await productModel.getProductById(productId);
   if (!product) {
     throw new NotFoundError('Product');
   }
+
+  if (includeDetails) {
+    const [images, variations, reviews] = await Promise.all([
+      productImageModel.getProductImages(productId),
+      productVariationModel.getProductVariations(productId),
+      productReviewModel.getProductReviews(productId),
+    ]);
+
+    return {
+      ...product,
+      images,
+      variations,
+      reviews,
+    };
+  }
+
   return product;
 };
 

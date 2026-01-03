@@ -24,12 +24,13 @@ const getActiveProducts = async (req, res, next) => {
 
 /**
  * Get product by ID
- * GET /api/products/:id
+ * GET /api/products/:id?details=true (optional - includes images, variations, reviews)
  */
 const getProductById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const product = await productService.getProductById(id);
+    const includeDetails = req.query.details === 'true';
+    const product = await productService.getProductById(id, includeDetails);
 
     res.json({
       success: true,
