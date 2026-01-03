@@ -1,4 +1,5 @@
 const productService = require('../services/productService');
+const bannerService = require('../services/bannerService');
 const userModel = require('../models/user');
 const subscriptionModel = require('../models/subscription');
 const subscriptionService = require('../services/subscriptionService');
@@ -257,6 +258,80 @@ const updateDeliveryStatus = async (req, res, next) => {
   }
 };
 
+// ========== Banners ==========
+
+/**
+ * Get all banners (admin view)
+ * GET /api/admin/banners
+ */
+const getAllBanners = async (req, res, next) => {
+  try {
+    const banners = await bannerService.getAllBanners();
+
+    res.json({
+      success: true,
+      data: banners,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Create banner
+ * POST /api/admin/banners
+ */
+const createBanner = async (req, res, next) => {
+  try {
+    const banner = await bannerService.createBanner(req.body, req.file);
+
+    res.status(201).json({
+      success: true,
+      data: banner,
+      message: 'Banner created successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update banner
+ * PUT /api/admin/banners/:id
+ */
+const updateBanner = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const banner = await bannerService.updateBanner(id, req.body, req.file);
+
+    res.json({
+      success: true,
+      data: banner,
+      message: 'Banner updated successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Delete banner
+ * DELETE /api/admin/banners/:id
+ */
+const deleteBanner = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await bannerService.deleteBanner(id);
+
+    res.json({
+      success: true,
+      message: 'Banner deleted successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   // Products
   getAllProducts,
@@ -273,5 +348,10 @@ module.exports = {
   // Deliveries
   getDeliveries,
   updateDeliveryStatus,
+  // Banners
+  getAllBanners,
+  createBanner,
+  updateBanner,
+  deleteBanner,
 };
 

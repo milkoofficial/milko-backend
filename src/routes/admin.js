@@ -49,5 +49,11 @@ router.post('/subscriptions/:id/resume', adminController.resumeSubscription);
 router.get('/deliveries', adminController.getDeliveries);
 router.put('/deliveries/:id', adminController.updateDeliveryStatus);
 
+// Banners
+router.get('/banners', adminController.getAllBanners);
+router.post('/banners', upload.single('image'), adminController.createBanner);
+router.put('/banners/:id', upload.single('image'), adminController.updateBanner);
+router.delete('/banners/:id', adminController.deleteBanner);
+
 module.exports = router;
 
